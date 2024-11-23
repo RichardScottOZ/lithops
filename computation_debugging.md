@@ -1,4 +1,5 @@
 # Flow
+- reduced bits of architecture notes from lithops repo
 
 ## FunctionExecutor
 FunctionExecutor class is responsible for orchestrating the computation in Lithops. 
