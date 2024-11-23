@@ -1,0 +1,26 @@
+lithops:
+    backend: aws_ec2
+    log_level: DEBUG
+
+aws:
+    access_key_id: ACCESS_KEY
+    secret_access_key: SECRET_KEY
+
+aws_ec2:
+    region : us-east-1
+    instance_role: ec2LithopsInstanceRole
+    vpc_id: vpc-id
+    security_group_id: sg-id
+    private_subnet_id: subnet-id
+    private_rtb_id: rtb-id
+    internet_gateway_id: adjkadfsdf  #junk don't need
+    ssh_key_name: lithops-key-ud
+    ssh_key_filename: lithops-key-id.aws_ec2.id_rsa
+    exec_mode: reuse
+    request_spot_instances: False  #spot had timeout problems, need to get to this later
+    
+
+aws_s3:
+    storage_bucket: lithopsbucketid
+
+
