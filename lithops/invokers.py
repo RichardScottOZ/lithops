@@ -215,7 +215,9 @@ class Invoker:
             )
 
         try:
+            #print("TRYING RUNTIME:",self.runtime_name)
             job.runtime_name = self.runtime_name
+            print("INVOKE JOB:",self.runtime_name,job)
             self._invoke_job(job)
         except (KeyboardInterrupt, Exception) as e:
             self.stop()
@@ -264,6 +266,7 @@ class BatchInvoker(Invoker):
         payload['call_ids'] = ["{:05d}".format(i) for i in range(job.total_calls)]
 
         start = time.time()
+        print("_INVOKE JOB:",payload)
         activation_id = self.compute_handler.invoke(payload)
         roundtrip = time.time() - start
         resp_time = format(round(roundtrip, 3), '.3f')
@@ -277,7 +280,9 @@ class BatchInvoker(Invoker):
         """
         Run a job
         """
+        print("RUNNING JOB:", job)
         futures = self._run_job(job)
+        print("FUTURES:",futures)
         self.job_monitor.start(futures)
 
         return futures
