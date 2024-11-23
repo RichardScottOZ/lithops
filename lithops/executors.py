@@ -194,6 +194,8 @@ class FunctionExecutor:
         self.last_call = 'call_async'
 
         runtime_meta = self.invoker.select_runtime(job_id, runtime_memory)
+        
+        print("RUNTIME META:", runtime_meta)
 
         job = create_map_job(config=self.config,
                              internal_storage=self.internal_storage,
