@@ -1,3 +1,6 @@
+
+#note this will need ecr and lamba and roles as necessary for other things
+
 {
 	"Version": "2012-10-17",
 	"Statement": [
