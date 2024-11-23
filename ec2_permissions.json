@@ -5,6 +5,9 @@
 			"Sid": "VisualEditor0",
 			"Effect": "Allow",
 			"Action": [
+                "s3:ListBucket",
+                "s3:GetObject",
+                "s3:PutObject",                
 				"ec2:TerminateInstances",
 				"ec2:DeleteTags",
 				"ec2:CreateTags",
