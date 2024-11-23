@@ -11,13 +11,17 @@ class SSHClient():
         self.ip_address = ip_address
         self.ssh_credentials = ssh_credentials
         self.ssh_client = None
-
+        print("SSH CREDENTIALS:", ssh_credentials)
+        print("IP ADRESS:", ip_address)        
         if 'key_filename' in self.ssh_credentials:
             fpath = os.path.expanduser(self.ssh_credentials['key_filename'])
             self.ssh_credentials['key_filename'] = fpath
+            #print("SSH CREDENTIALS_KEY:", self.ssh_credentials['key_filename'])
             if not os.path.exists(fpath):
+                print("no key filename")
                 logger.debug(f"Private key file {fpath} doesn't exist. Trying with the default key")
                 self.ssh_credentials['key_filename'] = os.path.expanduser('~/.ssh/id_rsa')
+                print("SSH CREDENTIALS_KEY NOT:", self.ssh_credentials['key_filename'])
 
     def close(self):
         """
@@ -28,7 +32,7 @@ class SSHClient():
 
     def create_client(self, timeout=2):
         """
-        Create the SSH client connection
+        Crate the SSH client connection
         """
         try:
             self.ssh_client = paramiko.SSHClient()
@@ -37,10 +41,13 @@ class SSHClient():
             user = self.ssh_credentials.get('username')
             password = self.ssh_credentials.get('password')
             pkey = None
-
+            #print(timeout,user,password)
+            #timeout = 32
             if self.ssh_credentials.get('key_filename'):
                 with open(self.ssh_credentials['key_filename']) as f:
                     pkey = paramiko.RSAKey.from_private_key(f)
+                    #print("PKEY:", pkey)
+                    print("IP CONNECT:", self.ip_address, user, password, timeout)
 
             self.ssh_client.connect(
                 self.ip_address, username=user,
@@ -49,9 +56,17 @@ class SSHClient():
                 allow_agent=False, look_for_keys=False
             )
 
+            #self.ssh_client.connect(
+            #    self.ip_address,  pkey=pkey,
+            #    timeout=timeout, banner_timeout=200,
+            #    allow_agent=False, look_for_keys=False
+            #)
+
             logger.debug(f"{self.ip_address} ssh client created")
         except Exception as e:
+            print("FAILED TO CREATE CLIENT:",e)
             raise e
+            
 
         return self.ssh_client
 
@@ -61,6 +76,7 @@ class SSHClient():
         param: timeout: execution timeout
         param: run_async: do not wait for command completion
         """
+        print("RUN REMOTE IP",self.ip_address)
         if not self.ip_address or self.ip_address == '0.0.0.0':
             raise Exception('Invalid IP Address')
 
