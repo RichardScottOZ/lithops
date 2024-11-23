@@ -24,6 +24,7 @@ execute the job by calling run() method of its FunctionInvoker instance.
 2. Each call executes first a call to an internal invoke() function defined inside FunctionInvoker.run(), which builds a payload (parameter) as a single dictionary with all the data the call needs. 
 3. Invocation proceeds to Compute.invoke(), which adds a retry mechanism for the current call, with random delays between retries (all configurable). 
 4. Invocation proceeds to ComputeBackend.invoke(). 
+### Problem is here
 5. When computation completes, each call commits the result to object storage in the configured bucket under output_key object 
 6. Each invoke() returns a ResponseFuture object, which is a future object to wait on for the computed result of each call 
 7. A list of ResponseFuture objects returned by FunctionInvoker.run() is stored in the FunctionExecutor object and also returned by its respective method for map [+reduce] job. Later calls to wait() or get_result() can be used to wait for job completion and retrieve the results, respectively.
