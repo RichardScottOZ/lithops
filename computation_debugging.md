@@ -32,6 +32,7 @@ execute the job by calling run() method of its FunctionInvoker instance.
 
 
 ### detail
+-- this is the BatchInvoker class that is called
 
 invokers has run_job  ~280
 '''
