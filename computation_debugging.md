@@ -4,7 +4,7 @@
 FunctionExecutor class is responsible for orchestrating the computation in Lithops. 
 One FunctionExecutor object is instantiated prior to any use of Lithops. 
 1. It sets up the workers
-2. It defines a bucket in object storageis complete).
+2. It defines a bucket in object storage.
 3. It creates a FunctionInvoker object, which is responsible for executing a job as a set of independent per-worker calls.
 
 ## Compute jobs
