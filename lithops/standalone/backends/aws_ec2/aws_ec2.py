@@ -37,6 +37,8 @@ from lithops.standalone import LithopsValidationError
 logger = logging.getLogger(__name__)
 
 INSTANCE_STX_TIMEOUT = 180
+#INSTANCE_STX_TIMEOUT = 360  # Richard 20241122
+#INSTANCE_STX_TIMEOUT = 720  # Richard 20241122
 
 DEFAULT_UBUNTU_IMAGE = 'ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*'
 DEFAULT_UBUNTU_IMAGE_VERSION = DEFAULT_UBUNTU_IMAGE.replace('*', '202306*')
@@ -172,6 +174,9 @@ class AWSEC2Backend:
         if 'public_subnet_id' in self.config:
             return
 
+        if 'private_subnet_id' in self.config:  ## Richard20241122
+            return
+
         if 'public_subnet_id' in self.ec2_data:
             sg_info = self.ec2_client.describe_subnets(
                 SubnetIds=[self.ec2_data['public_subnet_id']]
@@ -179,20 +184,24 @@ class AWSEC2Backend:
             if len(sg_info) > 0:
                 self.config['public_subnet_id'] = self.ec2_data['public_subnet_id']
 
-        if 'public_subnet_id' not in self.config:
+        #if 'public_subnet_id' not in self.config:
+        if 'public_subnet_id' not in self.config and 'private_subnet_id' not in self.config:  #Richard 20241122
             logger.debug(f'Creating new public subnet in VPC {self.vpc_name}')
             response = self.ec2_client.create_subnet(
                 CidrBlock='10.0.1.0/24', VpcId=self.config['vpc_id'],
+                #CidrBlock='10.6.130.0/23', VpcId=self.config['vpc_id'],  #Richard 20241122
             )
             public_subnet_id = response['Subnet']['SubnetId']
             self.config['public_subnet_id'] = public_subnet_id
+            
 
-        # if 'private_subnet_id' in self.ec2_data:
-        #     sg_info = self.ec2_client.describe_subnets(
-        #         SubnetIds=[self.ec2_data['private_subnet_id']]
-        #     )
-        #     if len(sg_info) > 0:
-        #         self.config['private_subnet_id'] = self.ec2_data['private_subnet_id']
+        if 'private_subnet_id' in self.ec2_data:
+             print("PRIVATE SUBNET ID:",self.ec2_data['private_subnet_id'])
+             sg_info = self.ec2_client.describe_subnets(
+                 SubnetIds=[self.ec2_data['private_subnet_id']]
+             )
+             if len(sg_info) > 0:
+                 self.config['private_subnet_id'] = self.ec2_data['private_subnet_id']
         #
         # if 'private_subnet_id' not in self.config:
         #     logger.debug(f'Creating new private subnet in VPC {self.vpc_name}')
@@ -287,7 +296,7 @@ class AWSEC2Backend:
             if len(sg_info) > 0:
                 self.config['public_rtb_id'] = self.ec2_data['public_rtb_id']
 
-        if 'public_rtb_id' not in self.config:
+        if 'public_rtb_id' not in self.config and 'private_rtb_id' not in self.config:
             logger.debug(f'Creating public routing table in VPC {self.vpc_name}')
             # The default RT is the public RT
             response = self.ec2_client.describe_route_tables()
@@ -309,12 +318,12 @@ class AWSEC2Backend:
             )
             self.config['public_rtb_id'] = publ_route_table_id
 
-        # if 'private_rtb_id' in self.ec2_data:
-        #     sg_info = self.ec2_client.describe_route_tables(
-        #         RouteTableIds=[self.ec2_data['private_rtb_id']]
-        #     )
-        #     if len(sg_info) > 0:
-        #         self.config['private_rtb_id'] = self.ec2_data['private_rtb_id']
+        if 'private_rtb_id' in self.ec2_data:
+            sg_info = self.ec2_client.describe_route_tables(
+                RouteTableIds=[self.ec2_data['private_rtb_id']]
+            )
+            if len(sg_info) > 0:
+                self.config['private_rtb_id'] = self.ec2_data['private_rtb_id']
         #
         # if 'private_rtb_id' not in self.config:
         #     logger.debug(f'Creating private routing table in VPC {self.vpc_name}')
@@ -593,13 +602,13 @@ class AWSEC2Backend:
                 'target_ami': self.config['target_ami'],
                 'ssh_key_name': self.config['ssh_key_name'],
                 'ssh_key_filename': self.config['ssh_key_filename'],
-                'public_subnet_id': self.config['public_subnet_id'],
-                # 'private_subnet_id': self.config['private_subnet_id'],
+                #'public_subnet_id': self.config['public_subnet_id'],  #Richard 20241122
+                'private_subnet_id': self.config['private_subnet_id'],  #Richard 20241122
                 'security_group_id': self.config['security_group_id'],
                 'internet_gateway_id': self.config['internet_gateway_id'],
                 # 'nat_gateway_id': self.config['nat_gateway_id'],
-                # 'private_rtb_id': self.config['private_rtb_id'],
-                'public_rtb_id': self.config['public_rtb_id'],
+                'private_rtb_id': self.config['private_rtb_id'], #Richard 20241122
+                #'public_rtb_id': self.config['public_rtb_id'],
                 'instance_types': self.instance_types
             }
 
@@ -1007,6 +1016,7 @@ class AWSEC2Backend:
         """
         name = runtime_name.replace('/', '-').replace(':', '-')
         runtime_key = os.path.join(self.name, version, self.ec2_data['master_id'], name)
+        print("RUNTIME_NAME:",name, runtime_key)
         return runtime_key
 
 
@@ -1043,9 +1053,12 @@ class EC2Instance:
             'password': self.config['ssh_password'],
             'key_filename': self.config.get('ssh_key_filename', '~/.ssh/id_rsa')
         }
+        
+        #print("SELF SSH:",self.ssh_credentials)
 
     def __str__(self):
-        ip = self.public_ip if self.public else self.private_ip
+        #ip = self.public_ip if self.public else self.private_ip
+        ip = self.private_ip  #Richard 20221123
 
         if ip is None or ip == '0.0.0.0':
             return f'VM instance {self.name}'
@@ -1074,12 +1087,18 @@ class EC2Instance:
         """
         Creates an ssh client against the VM
         """
-        if self.public:
+        #print(dir(self))
+        print("PUBLIC:",self.public,self.public_ip,self.private_ip)
+        print("NAME:",self.name)
+        #if self.public:
+        if self.public and 1 == 2:  #Richard 20241122
             if not self.ssh_client or self.ssh_client.ip_address != self.public_ip:
                 self.ssh_client = SSHClient(self.public_ip, self.ssh_credentials)
         else:
             if not self.ssh_client or self.ssh_client.ip_address != self.private_ip:
                 self.ssh_client = SSHClient(self.private_ip, self.ssh_credentials)
+                
+        self.ssh_client = SSHClient(self.private_ip, self.ssh_credentials)  #Richard 20241122
 
         return self.ssh_client
 
@@ -1098,13 +1117,20 @@ class EC2Instance:
         """
         Checks if the VM instance is ready to receive ssh connections
         """
+        #return True
+        #self.public = False
         login_type = 'password' if 'password' in self.ssh_credentials and \
             not self.public else 'publickey'
+        #login_type = 'privatekey'
         try:
+            #self.public = True
             self.get_ssh_client().run_remote_command('id')
+            #pass
         except LithopsValidationError as err:
             raise err
         except Exception as err:
+            #logger.debug(f'SSH to {self.public_ip if self.public else self.private_ip} failed ({login_type}): {err}')
+            #logger.debug(f'SSH to {self.public_ip if self.public else self.private_ip} failed ({login_type}): {err}')
             logger.debug(f'SSH to {self.public_ip if self.public else self.private_ip} failed ({login_type}): {err}')
             self.del_ssh_client()
             return False
@@ -1118,7 +1144,8 @@ class EC2Instance:
 
         start = time.time()
 
-        self.get_public_ip() if self.public else self.get_private_ip()
+        #self.get_public_ip() if self.public else self.get_private_ip()
+        self.get_private_ip() #Richard 20241122
 
         while (time.time() - start < timeout):
             if self.is_ready():
@@ -1131,7 +1158,7 @@ class EC2Instance:
 
     def is_stopped(self):
         """
-        Checks if the VM instance is stopped
+        Checks if the VM instance is stoped
         """
         state = self.get_instance_data()['State']
         if state['Name'] == 'stopped':
@@ -1140,7 +1167,7 @@ class EC2Instance:
 
     def wait_stopped(self, timeout=INSTANCE_STX_TIMEOUT):
         """
-        Waits until the VM instance is stopped
+        Waits until the VM instance is stoped
         """
         logger.debug(f'Waiting {self} to become stopped')
 
@@ -1165,12 +1192,25 @@ class EC2Instance:
                         'VolumeSize': 100,
                         'DeleteOnTermination': True,
                         'VolumeType': 'gp2',
+                        'Encrypted': True
                         # 'Iops' : 10000,
                     },
                 },
             ]
         else:
-            BlockDeviceMappings = None
+            BlockDeviceMappings = None #Richard 20241122
+            BlockDeviceMappings = [
+                {
+                    'DeviceName': '/dev/sda1',
+                    'Ebs': {
+                        'VolumeSize': 100,
+                        'DeleteOnTermination': True,
+                        'VolumeType': 'gp2',
+                        'Encrypted': True
+                        # 'Iops' : 10000,
+                    },
+                },
+            ]
 
         LaunchSpecification = {
             "ImageId": self.config['target_ami'],
@@ -1184,7 +1224,8 @@ class EC2Instance:
         LaunchSpecification['NetworkInterfaces'] = [{
             'AssociatePublicIpAddress': True,
             'DeviceIndex': 0,
-            'SubnetId': self.config['public_subnet_id'],
+            #'SubnetId': self.config['public_subnet_id'],  #Richard20241122
+            'SubnetId': self.config['private_subnet_id'],  #Richard20241122
             'Groups': [self.config['security_group_id']]
         }]
 
@@ -1235,10 +1276,13 @@ class EC2Instance:
             LaunchSpecification['MaxCount'] = 1
             LaunchSpecification["TagSpecifications"] = [{"ResourceType": "instance", "Tags": [{'Key': 'Name', 'Value': self.name}]}]
             LaunchSpecification["InstanceInitiatedShutdownBehavior"] = 'terminate' if self.delete_on_dismantle else 'stop'
+            
+            #print("LAUNCH SPECIFICATION:",LaunchSpecification)
 
             if user_data:
                 LaunchSpecification['UserData'] = user_data
 
+            #print("LAUNCHSPEC:",LaunchSpecification)
             resp = self.ec2_client.run_instances(**LaunchSpecification)
 
         logger.debug(f"VM instance {self.name} created successfully ")
@@ -1346,7 +1390,8 @@ class EC2Instance:
 
         try:
             self.ec2_client.start_instances(InstanceIds=[self.instance_id])
-            self.public_ip = self.get_public_ip()
+            #self.public_ip = self.get_public_ip()
+            self.private_ip = self.get_private_ip()
         except botocore.exceptions.ClientError as err:
             if err.response['Error']['Code'] == 'IncorrectInstanceState':
                 time.sleep(20)
