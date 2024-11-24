@@ -1,5 +1,6 @@
 # Flow
 - reduced bits of architecture notes from lithops repo
+- need port 8080 (master) and (8081) worker open in security group
 
 ## FunctionExecutor
 FunctionExecutor class is responsible for orchestrating the computation in Lithops. 
