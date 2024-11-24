@@ -1,5 +1,7 @@
 # Branch
 - pip install git+https://github.com/RichardScottOZ/lithops.git@private_ip
+- pip install https://github.com/RichardScottOZ/lithops/archive/private_ip.zip --force-reinstall
+
 
 # Flow
 - reduced bits of architecture notes from lithops repo
