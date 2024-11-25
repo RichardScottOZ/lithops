@@ -1199,18 +1199,18 @@ class EC2Instance:
             ]
         else:
             BlockDeviceMappings = None #Richard 20241122
-            BlockDeviceMappings = [
-                {
-                    'DeviceName': '/dev/sda1',
-                    'Ebs': {
-                        'VolumeSize': 100,
-                        'DeleteOnTermination': True,
-                        'VolumeType': 'gp2',
-                        'Encrypted': True
-                        # 'Iops' : 10000,
-                    },
-                },
-            ]
+            #BlockDeviceMappings = [
+            #    {
+            #        'DeviceName': '/dev/sda1',
+            #        'Ebs': {
+            #            'VolumeSize': 100,
+            #            'DeleteOnTermination': True,
+            #            'VolumeType': 'gp2',
+            #            'Encrypted': True
+            #            # 'Iops' : 10000,
+            #        },
+            #    },
+            #]
 
         LaunchSpecification = {
             "ImageId": self.config['target_ami'],
